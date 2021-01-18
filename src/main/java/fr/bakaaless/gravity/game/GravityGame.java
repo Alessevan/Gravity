@@ -79,10 +79,14 @@ public class GravityGame {
 
     public void update() {
         for (final GravityPlayer player : this.players) {
-            int mapId = player.getMap();
             if (player.toPlayer().getLocation().getBlock().getType().equals(Material.NETHER_PORTAL))
                 player.onSuccess();
-
+            final int mapId = player.getMap();
+            final Map currentMap = this.mapSet.get(mapId);
+            if (player instanceof Gamer) {
+                player.toPlayer().setLevel(player.toPlayer().getLocation().getBlockY() - currentMap.getFloor());
+                player.toPlayer().sendActionBar("");
+            }
         }
         if (this.step % 2 == 0)
             this.updateClassement();
