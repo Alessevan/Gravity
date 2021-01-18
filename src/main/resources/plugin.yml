@@ -1,0 +1,4 @@
+name: @NAME@
+version: @VERSION@
+main: fr.bakaaless.gravity.plugin.GravityPlugin
+api-version: @APIVERSION@
