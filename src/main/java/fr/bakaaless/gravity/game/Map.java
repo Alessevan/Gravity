@@ -28,6 +28,30 @@ public class Map {
         this.spawns.forEach(location -> location.getChunk().load());
     }
 
+    public String toColor() {
+        String result;
+        switch(this.difficulty) {
+            case 0:
+                result = "§a";
+                break;
+            case 1:
+                result = "§2";
+                break;
+            case 2:
+                result = "§6";
+                break;
+            case 3:
+                result = "§c";
+                break;
+            case 4:
+                result = "§4";
+                break;
+            default:
+                result = "§0";
+        }
+        return result;
+    }
+
     public UUID getUniqueId() {
         return this.uniqueId;
     }

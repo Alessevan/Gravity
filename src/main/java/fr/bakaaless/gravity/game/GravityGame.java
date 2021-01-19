@@ -2,8 +2,10 @@ package fr.bakaaless.gravity.game;
 
 import fr.bakaaless.gravity.game.gamers.Gamer;
 import fr.bakaaless.gravity.game.gamers.GravityPlayer;
+import fr.bakaaless.gravity.game.gamers.HardCoreGamer;
 import fr.bakaaless.gravity.game.storage.GravityConfig;
 import fr.bakaaless.gravity.utils.DoubleResult;
+import fr.bakaaless.gravity.utils.Others;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -85,7 +87,31 @@ public class GravityGame {
             final Map currentMap = this.mapSet.get(mapId);
             if (player instanceof Gamer) {
                 player.toPlayer().setLevel(player.toPlayer().getLocation().getBlockY() - currentMap.getFloor());
-                player.toPlayer().sendActionBar("");
+                final StringBuilder builder = new StringBuilder();
+                if (player instanceof HardCoreGamer) {
+                    builder.append("§cLifes : §4")
+                            .append(((Gamer) player).getFails())
+                            .append("/")
+                            .append(this.getConfig().getMaxFails());
+                } else {
+                    builder.append("§cFails : §4")
+                            .append(((Gamer) player).getFails());
+                }
+                builder.append("  §8§l| ");
+                for (int i = 0; i < this.mapSet.size(); i++) {
+                    final Map map = this.mapSet.get(i);
+                    if (map.equals(currentMap)) {
+                        builder.append(" §2» ")
+                                .append(map.toColor())
+                                .append(Others.getIntCircle(i))
+                                .append(" §2«");
+                    } else {
+                        builder.append(" ")
+                                .append(map.toColor())
+                                .append(Others.getIntCircle(i));
+                    }
+                }
+                player.toPlayer().sendActionBar(builder.toString());
             }
         }
         if (this.step % 2 == 0)
@@ -103,7 +129,7 @@ public class GravityGame {
     }
 
     public List<Gamer> updateClassement() {
-        final List<Gamer> result = new ArrayList<>(this.finished);
+        final List<Gamer> result = Others.copy(this.finished);
         for (int index = this.mapSet.size() - 1; index >= 0 && result.size() <= 5; index--) {
             final int mapId = index;
             final List<Gamer> filtered = this.getGamers().stream()
@@ -116,6 +142,10 @@ public class GravityGame {
         }
         this.classement = result;
         return result;
+    }
+
+    public void addWinner(final Gamer gamer) {
+        this.finished.add(gamer);
     }
 
     public UUID getUniqueId() {
