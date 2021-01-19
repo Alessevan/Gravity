@@ -43,6 +43,7 @@ public class GravityGame {
     private final Set<GravityPlayer> players;
     private final GravityConfig config;
 
+    private transient List<Map> loadedMaps;
     private transient int step;
     private transient TimerTask task;
     private transient Timer timer;
@@ -61,7 +62,11 @@ public class GravityGame {
     public void start() {
         if (this.timer != null && this.task != null)
             this.stop();
-        this.mapSet.forEach(Map::loadSpawns);
+        this.loadedMaps = Others.copy(this.mapSet);
+        while (this.loadedMaps.size() > this.getConfig().getMaps()) {
+            this.loadedMaps.remove(new Random().nextInt(this.loadedMaps.size()));
+        }
+        this.loadedMaps.forEach(Map::loadSpawns);
         this.players.stream().filter(player -> player instanceof Gamer)
                 .map(player -> (Gamer) player)
                 .forEach(Gamer::init);
@@ -84,7 +89,7 @@ public class GravityGame {
             if (player.toPlayer().getLocation().getBlock().getType().equals(Material.NETHER_PORTAL))
                 player.onSuccess();
             final int mapId = player.getMap();
-            final Map currentMap = this.mapSet.get(mapId);
+            final Map currentMap = this.loadedMaps.get(mapId);
             if (player instanceof Gamer) {
                 player.toPlayer().setLevel(player.toPlayer().getLocation().getBlockY() - currentMap.getFloor());
                 final StringBuilder builder = new StringBuilder();
@@ -98,8 +103,8 @@ public class GravityGame {
                             .append(((Gamer) player).getFails());
                 }
                 builder.append("  §8§l| ");
-                for (int i = 0; i < this.mapSet.size(); i++) {
-                    final Map map = this.mapSet.get(i);
+                for (int i = 0; i < this.loadedMaps.size(); i++) {
+                    final Map map = this.loadedMaps.get(i);
                     if (map.equals(currentMap)) {
                         builder.append(" §2» ")
                                 .append(map.toColor())
@@ -116,6 +121,15 @@ public class GravityGame {
         }
         if (this.step % 2 == 0)
             this.updateClassement();
+        if (this.finished.size() > 0) {
+            if (this.step / 20 == this.getConfig().getTimeAfterWin()) {
+                //stop
+            }
+        } else if (this.step / 20 == this.getConfig().getTimeMax()) {
+            //stop
+        } else if (this.getGamers().size() == 0) {
+            //stop
+        }
         this.step++;
     }
 
@@ -128,9 +142,13 @@ public class GravityGame {
         this.timer = null;
     }
 
+    public void join(final Player player) {
+
+    }
+
     public List<Gamer> updateClassement() {
         final List<Gamer> result = Others.copy(this.finished);
-        for (int index = this.mapSet.size() - 1; index >= 0 && result.size() <= 5; index--) {
+        for (int index = this.loadedMaps.size() - 1; index >= 0 && result.size() <= 5; index--) {
             final int mapId = index;
             final List<Gamer> filtered = this.getGamers().stream()
                     .filter(player -> player.getMap() == mapId)
@@ -166,6 +184,10 @@ public class GravityGame {
 
     public GravityConfig getConfig() {
         return this.config;
+    }
+
+    public List<Map> getLoadedMaps() {
+        return this.loadedMaps;
     }
 
     public Set<Gamer> getGamers() {

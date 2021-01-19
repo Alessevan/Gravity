@@ -2,10 +2,28 @@ package fr.bakaaless.gravity.game.storage;
 
 public class GravityConfig {
 
+    private int playerMin;
+    private int playerMax;
     private int maps;
     private int maxFails;
     private long timeMax;
     private long timeAfterWin;
+
+    public int getPlayerMin() {
+        return this.playerMin;
+    }
+
+    public void setPlayerMin(final int playerMin) {
+        this.playerMin = playerMin;
+    }
+
+    public int getPlayerMax() {
+        return this.playerMax;
+    }
+
+    public void setPlayerMax(final int playerMax) {
+        this.playerMax = playerMax;
+    }
 
     public int getMaps() {
         return this.maps;

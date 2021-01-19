@@ -22,7 +22,7 @@ public abstract class Gamer extends GravityPlayer {
 
     public void onFail() {
         this.fails++;
-        final List<Location> futureSpawns = this.getGame().getMapSet().get(this.getMap()).getSpawns();
+        final List<Location> futureSpawns = this.getGame().getLoadedMaps().get(this.getMap()).getSpawns();
         this.toPlayer().teleport(
                 futureSpawns.get(new Random().nextInt(futureSpawns.size()))
         );

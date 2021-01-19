@@ -27,7 +27,8 @@ public abstract class GravityPlayer {
 
     public void onSuccess() {
         this.map++;
-        if (this.map == this.game.getMapSet().size() && this instanceof Gamer) {
+        if (this.map == this.game.getLoadedMaps().size() && this instanceof Gamer) {
+            this.map = 0;
             this.getGame().addWinner((Gamer) this);
             this.getGame().getPlayers().remove(this);
             final SpectatorPlayer player = SpectatorPlayer.from((Gamer) this);
@@ -35,7 +36,7 @@ public abstract class GravityPlayer {
             this.getGame().getPlayers().add(player);
             return;
         }
-        final List<Location> futureSpawns = this.getGame().getMapSet().get(this.map).getSpawns();
+        final List<Location> futureSpawns = this.getGame().getLoadedMaps().get(this.map).getSpawns();
         this.toPlayer().teleport(
                         futureSpawns.get(new Random().nextInt(futureSpawns.size()))
         );
