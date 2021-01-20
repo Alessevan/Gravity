@@ -15,6 +15,10 @@ public class GeneralConfig {
     private GeneralConfig() {
     }
 
+    public void init() {
+
+    }
+
     public boolean isBungee() {
         return this.bungee;
     }

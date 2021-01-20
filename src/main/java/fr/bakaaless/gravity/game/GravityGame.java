@@ -1,8 +1,6 @@
 package fr.bakaaless.gravity.game;
 
-import fr.bakaaless.gravity.game.gamers.Gamer;
-import fr.bakaaless.gravity.game.gamers.GravityPlayer;
-import fr.bakaaless.gravity.game.gamers.HardCoreGamer;
+import fr.bakaaless.gravity.game.gamers.*;
 import fr.bakaaless.gravity.game.storage.GravityConfig;
 import fr.bakaaless.gravity.utils.DoubleResult;
 import fr.bakaaless.gravity.utils.Others;
@@ -40,13 +38,12 @@ public class GravityGame {
     private final UUID uniqueId;
     private String name;
     private final List<Map> mapSet;
-    private final Set<GravityPlayer> players;
     private final GravityConfig config;
 
+    private transient Status status;
+    private transient Set<GravityPlayer> players;
     private transient List<Map> loadedMaps;
     private transient int step;
-    private transient TimerTask task;
-    private transient Timer timer;
 
     private transient List<Gamer> classement;
     private transient List<Gamer> finished;
@@ -55,13 +52,18 @@ public class GravityGame {
         this.uniqueId = uniqueId;
         this.name = name;
         this.mapSet = new ArrayList<>();
-        this.players = new HashSet<>();
         this.config = new GravityConfig();
     }
 
+    public void init() {
+        this.status = Status.WAITING;
+        this.players = new HashSet<>();
+        this.classement = new ArrayList<>();
+        this.finished = new ArrayList<>();
+    }
+
     public void start() {
-        if (this.timer != null && this.task != null)
-            this.stop();
+        this.status = Status.STARTING;
         this.loadedMaps = Others.copy(this.mapSet);
         while (this.loadedMaps.size() > this.getConfig().getMaps()) {
             this.loadedMaps.remove(new Random().nextInt(this.loadedMaps.size()));
@@ -71,20 +73,24 @@ public class GravityGame {
                 .map(player -> (Gamer) player)
                 .forEach(Gamer::init);
         this.step = 0;
-        final GravityGame game = this;
-        this.classement = new ArrayList<>();
-        this.finished = new ArrayList<>();
-        this.task = new TimerTask() {
-            @Override
-            public void run() {
-                game.update();
-            }
-        };
-        this.timer = new Timer();
-        this.timer.schedule(this.task, 0, 50L);
     }
 
     public void update() {
+        if (this.status == Status.WAITING) {
+            final int needPlayers = this.getConfig().getPlayerMin() - this.players.size();
+            if (needPlayers > 0)
+                this.players.forEach(player -> player.toPlayer().sendActionBar("§eWaiting §l" + needPlayers + " players §eto launch the game..."));
+            if (needPlayers >= 0) {
+                final int timeUntilStart = this.getConfig().getWaitingTimer() - this.step / 20;
+                this.players.forEach(player -> player.toPlayer().sendActionBar("§aStarting in " + (timeUntilStart > 5 ? "&l" : "&c&l") + timeUntilStart));
+                if (timeUntilStart == 0) {
+                    this.start();
+                    return;
+                }
+                this.step++;
+            }
+            return;
+        }
         for (final GravityPlayer player : this.players) {
             if (player.toPlayer().getLocation().getBlock().getType().equals(Material.NETHER_PORTAL))
                 player.onSuccess();
@@ -134,16 +140,32 @@ public class GravityGame {
     }
 
     public void stop() {
-        if (this.timer == null || this.task == null)
-            return;
-        this.step = -1;
-        this.timer.cancel();
-        this.task = null;
-        this.timer = null;
+        this.step = 0;
+        this.status = Status.WAITING;
     }
 
-    public void join(final Player player) {
-
+    public DoubleResult<Boolean, String> join(final Player player) {
+        final DoubleResult<Boolean, String> answer = new DoubleResult<>();
+        if ((this.status == Status.WAITING || this.status == Status.STARTING) && this.getPlayers().size() > this.getConfig().getPlayerMax()) {
+            answer.setFirstValue(false);
+            answer.setSecondValue("Full");
+        } else if (this.status == Status.WAITING && this.getPlayers().size() <= this.getConfig().getPlayerMax()) {
+            final GravityPlayer playerGame = new SimpleGamer(player.getUniqueId(), this);
+            playerGame.join();
+            for (final GravityPlayer players : this.getPlayers()) {
+                players.toPlayer().sendMessage("sendJoinMessage");
+            }
+            this.getPlayers().add(playerGame);
+            answer.setFirstValue(true);
+            answer.setSecondValue("Joined");
+        } else {
+            final GravityPlayer playerGame = new SpectatorPlayer(player.getUniqueId(), this);
+            playerGame.join();
+            this.getPlayers().add(playerGame);
+            answer.setFirstValue(true);
+            answer.setSecondValue("Spectator");
+        }
+        return answer;
     }
 
     public List<Gamer> updateClassement() {
@@ -199,5 +221,12 @@ public class GravityGame {
 
     public Set<GravityPlayer> getPlayers() {
         return this.players;
+    }
+
+    private enum Status {
+        WAITING,
+        STARTING,
+        EXECUTING,
+        ENDING;
     }
 }

@@ -6,6 +6,7 @@ public class GravityConfig {
     private int playerMax;
     private int maps;
     private int maxFails;
+    private int waitingTimer;
     private long timeMax;
     private long timeAfterWin;
 
@@ -39,6 +40,14 @@ public class GravityConfig {
 
     public void setMaxFails(final int maxFails) {
         this.maxFails = maxFails;
+    }
+
+    public int getWaitingTimer() {
+        return this.waitingTimer;
+    }
+
+    public void setWaitingTimer(final int waitingTimer) {
+        this.waitingTimer = waitingTimer;
     }
 
     public long getTimeMax() {

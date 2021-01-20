@@ -20,7 +20,12 @@ public class Listening implements Listener {
     @EventHandler
     public void onJoin(final PlayerJoinEvent e) {
         if (GeneralConfig.get().isBungee()) {
-            GravityGame.getGames().get(0).join(e.getPlayer());
+            final DoubleResult<Boolean, String> result = GravityGame.getGames().get(0).join(e.getPlayer());
+            if (!result.getFirstValue()) {
+                e.getPlayer().kickPlayer(result.getSecondValue());
+                return;
+            }
+            e.getPlayer().sendMessage(result.getSecondValue());
         }
     }
 
