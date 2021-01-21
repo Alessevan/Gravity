@@ -1,8 +1,13 @@
 package fr.bakaaless.gravity.game;
 
+import fr.bakaaless.gravity.utils.DoubleResult;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,8 +18,8 @@ public class Map {
     private int difficulty;
     private int floor;
     private final List<Location> spawns;
-    private Location pointA;
-    private Location pointB;
+    private Location hole;
+    private transient HashMap<Location, DoubleResult<Material, BlockData>> tempBlocks;
 
     public Map(final UUID uniqueId, final String name) {
         this.uniqueId = uniqueId;
@@ -26,6 +31,32 @@ public class Map {
 
     public void loadSpawns() {
         this.spawns.forEach(location -> location.getChunk().load());
+    }
+
+    public void unlock() {
+        if (this.tempBlocks != null && this.tempBlocks.size() > 0)
+            this.lock();
+        this.tempBlocks = new HashMap<>();
+        for (int x = -1; x < 2; x++) {
+            for (int y = -1; y < 2; y++) {
+                for (int z = -1; z < 2; z++) {
+                    final Block previousBlock = this.hole.clone().add(x, y, z).getBlock();
+                    this.tempBlocks.put(previousBlock.getLocation(),
+                            DoubleResult.from(previousBlock.getType(), previousBlock.getBlockData())
+                    );
+                    previousBlock.setType(Material.AIR);
+                }
+            }
+        }
+    }
+
+    public void lock() {
+        for (final java.util.Map.Entry<Location, DoubleResult<Material, BlockData>> tempBlocks : this.tempBlocks.entrySet()) {
+            final Block block = tempBlocks.getKey().getBlock();
+            block.setType(tempBlocks.getValue().getFirstValue());
+            block.setBlockData(tempBlocks.getValue().getSecondValue());
+        }
+        this.tempBlocks.clear();
     }
 
     public String toColor() {
@@ -84,19 +115,11 @@ public class Map {
         return spawns;
     }
 
-    public Location getPointA() {
-        return pointA;
+    public Location getHole() {
+        return this.hole;
     }
 
-    public void setPointA(Location pointA) {
-        this.pointA = pointA;
-    }
-
-    public Location getPointB() {
-        return pointB;
-    }
-
-    public void setPointB(Location pointB) {
-        this.pointB = pointB;
+    public void setHole(final Location hole) {
+        this.hole = hole;
     }
 }

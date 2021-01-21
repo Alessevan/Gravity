@@ -71,7 +71,11 @@ public class GravityGame {
         this.loadedMaps.forEach(Map::loadSpawns);
         this.players.stream().filter(player -> player instanceof Gamer)
                 .map(player -> (Gamer) player)
-                .forEach(Gamer::init);
+                .forEach(gamer -> {
+                    final Map currentMap = this.loadedMaps.get(0);
+                    gamer.toPlayer().teleport(currentMap.getSpawns().get(new Random().nextInt(currentMap.getSpawns().size())));
+                    gamer.init();
+                });
         this.step = 0;
     }
 
@@ -90,6 +94,8 @@ public class GravityGame {
                 this.step++;
             }
             return;
+        } else if (this.status == Status.STARTING) {
+
         }
         for (final GravityPlayer player : this.players) {
             if (player.toPlayer().getLocation().getBlock().getType().equals(Material.NETHER_PORTAL))
